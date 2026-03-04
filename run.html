@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Design Audit</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -72,7 +73,10 @@ header h1{font-family:var(--display);font-size:16px;font-weight:700;letter-spaci
 .pv-section{padding:20px 26px;border-right:1px solid var(--border)}
 .pv-section:last-child{border-right:none}
 .sec-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
-.theme-text{font-size:13px;color:#a0a0c0;line-height:1.7}
+.tooltip-wrap{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-family:var(--sans);font-size:9px;cursor:default;position:relative;vertical-align:middle;margin-left:4px;font-style:normal;font-weight:600}
+.tooltip-wrap:hover .tooltip{display:block}
+.tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:11px;line-height:1.6;padding:10px 13px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4);font-weight:400;letter-spacing:0;text-transform:none}
+.tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--border2)}
 .theme-loading{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .theme-loading::before{content:"";width:10px;height:10px;border:1.5px solid var(--muted);border-top-color:var(--accent2);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
 .btn-rerun{display:none;margin-bottom:16px;padding:9px 18px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--accent2);font-family:var(--mono);font-size:12px;cursor:pointer;transition:border-color .2s,color .2s}
@@ -133,7 +137,7 @@ header h1{font-family:var(--display);font-size:16px;font-weight:700;letter-spaci
 .d-fail{color:var(--fail)}.d-warn{color:var(--warn)}
 a.ext-link{color:var(--accent2);font-size:11px;font-family:var(--mono);text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:5px}
 a.ext-link:hover{text-decoration:underline}
-.priority{margin-top:20px;background:var(--fail-bg);border:1px solid var(--fail-bd);border-radius:12px;padding:18px;display:none}
+.priority{margin-top:20px;margin-bottom:24px;background:var(--fail-bg);border:1px solid var(--fail-bd);border-radius:12px;padding:18px;display:none}
 .priority.on{display:block}
 .priority h3{font-family:var(--display);font-size:13px;color:var(--fail);margin-bottom:11px;font-weight:700}
 .priority-list{display:flex;flex-direction:column;gap:8px}
@@ -144,6 +148,7 @@ a.ext-link:hover{text-decoration:underline}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
 .fade-up{animation:up .35s ease both}
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:9999}
 @media(max-width:600px){.main{padding:20px 16px}.score-cards{gap:7px}.score-card{padding:11px 8px}.score-card .count{font-size:26px}.pv-body{grid-template-columns:1fr}.pv-section{border-right:none;border-bottom:1px solid var(--border)}}
 </style>
 </head>
@@ -176,9 +181,11 @@ a.ext-link:hover{text-decoration:underline}
         <input type="text" id="projectName" placeholder="" />
       </div>
       <div class="field">
-        <label>Personal Access Token <span id="tokenSaved" style="color:var(--pass);font-family:var(--mono);font-size:9px;letter-spacing:.06em;display:none">✓ SAVED</span></label>
+        <label>Personal Access Token <span id="tokenSaved" style="color:var(--pass);font-family:var(--mono);font-size:9px;letter-spacing:.06em;display:none">✓ SAVED</span>
+          <span class="tooltip-wrap">?<span class="tooltip">1. In Figma, go to your profile icon → Settings<br>2. Scroll to "Personal access tokens"<br>3. Click "Generate new token"<br>4. Give it a name, set expiry, copy it here</span></span>
+        </label>
         <input type="password" id="token" placeholder="figd_xxxxxxxxxxxx" autocomplete="off" oninput="onToken(this.value)" />
-        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Stored locally in your browser — never sent anywhere except Figma.</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Stored in your browser — never sent anywhere except Figma.</span>
       </div>
       <div class="field">
         <label>Figma Link</label>
@@ -188,7 +195,6 @@ a.ext-link:hover{text-decoration:underline}
       <input type="hidden" id="nodeId" />
       <div class="link-preview" id="linkPreview">
         <span>File: <strong id="pvFile"></strong></span>
-        <span>Node: <strong id="pvNode"></strong></span>
         <span id="pvCtx" style="color:var(--accent2)"></span>
       </div>
       <button class="btn btn-primary" id="previewBtn" onclick="runPreview()">Preview Design →</button>
@@ -212,8 +218,8 @@ a.ext-link:hover{text-decoration:underline}
       <div class="score-card warn"><div class="icon">⚠️</div><div class="count" id="warnCount">0</div><div class="clabel">Manual</div></div>
     </div>
     <div class="meta-bar" id="metaBar"></div>
-    <div class="results" id="results"></div>
     <div class="priority" id="priority"><h3>🔥 Priority Fixes</h3><div class="priority-list" id="priorityList"></div></div>
+    <div class="results" id="results"></div>
   </div>
 
 </main>
@@ -289,10 +295,16 @@ function artCtx(name){
 function onLink(url){
   const{fileKey,nodeId}=parseLink(url);
   $("fileKey").value=fileKey;$("nodeId").value=nodeId;
-  $("pvFile").textContent=fileKey||"—";$("pvNode").textContent=nodeId||"—";
-  $("linkPreview").style.display=(fileKey||nodeId)?"flex":"none";
+  // Extract human-readable project name from URL segment before the "?"
   const seg=url.match(/figma\.com\/(?:design|file)\/[^/]+\/([^?]+)/)?.[1];
-  if(seg&&!$("projectName").value)$("projectName").value=titleCase(decodeURIComponent(seg).replace(/-/g," ").split(/[/|–]/)[0].trim());
+  const projectLabel=seg?titleCase(decodeURIComponent(seg).replace(/-/g," ").split(/[/|–]/)[0].trim()):"";
+  if(projectLabel){
+    $("pvFile").textContent=projectLabel;
+    if(!$("projectName").value)$("projectName").value=projectLabel;
+  } else {
+    $("pvFile").textContent=fileKey||"—";
+  }
+  $("linkPreview").style.display=(fileKey||nodeId)?"flex":"none";
   const ctx=artCtx(seg?decodeURIComponent(seg):"");
   $("pvCtx").textContent=ctx.label?`✦ ${ctx.label}`:"";
 }
@@ -410,12 +422,10 @@ function renderPreview(doc,sg,projectName,thumb,themeData){
         <div class="pv-project">${esc(projectName)}</div>
         <div class="pv-meta"><span>${esc(doc.name)}</span>${ctx.label?`<span class="tag">${esc(ctx.label)}</span>`:""}<span class="tag">${w}×${h}px</span></div>
       </div>
-      <div class="thumb" style="max-width:min(220px,38%)">${thumbInner}</div>
     </div>
     <div class="pv-body">
-      <div class="pv-section">
-        <div class="sec-label">Subject</div>
-        <div id="themeContainer">${themeHTML}</div>
+      <div class="pv-section" style="display:flex;align-items:flex-start;justify-content:center;padding:20px">
+        <div class="thumb" style="width:100%">${thumbInner}</div>
       </div>
       <div class="pv-section">
         <div class="sec-label">Style Guide</div>
@@ -467,14 +477,9 @@ async function runPreview(){
     const sg=extractSG(doc);
     hideProg();btn.innerHTML="Preview Design →";btn.disabled=false;
     hide("formCard");show("previewStep");off("summary");
-    renderPreview(doc,sg,projectName,thumb,null); // render immediately with loading state
+    renderPreview(doc,sg,projectName,thumb,null);
     window._doc=doc;
     window._meta={projectName,name:doc.name,width:doc.absoluteBoundingBox?.width||0,...artCtx(doc.name)};
-    // Enrich theme async — patches the DOM when ready
-    enrichTheme(doc).then(themeData=>{
-      const el=$("themeContainer");
-      if(el) el.innerHTML=renderThemeHTML(themeData);
-    });
   }catch(e){
     hideProg();$("errorBox").textContent=`Error: ${e.message}`;on("errorBox");
     btn.innerHTML="Preview Design →";btn.disabled=false;
@@ -573,12 +578,16 @@ function audit(doc,imgData){
   if(accents.length){res.push({id:5,label:"Accent Colors",status:"pass",finding:`${accents.length} accent color(s): ${accents.slice(0,6).join(", ")}.`})}
   else{res.push({id:5,label:"Accent Colors",status:"fail",finding:"Only neutrals detected.",action:"Add at least one brand accent color for CTAs and highlights."})}
 
-  // 6. Section height
+  // 6. Section height — all sections ≤800px, heroes ≤1000px
   next("Section height");
   const sections=(doc.children||[]).filter(n=>(n.type==="FRAME"||n.type==="SECTION")&&n.absoluteBoundingBox);
-  const tall=sections.filter(n=>n.absoluteBoundingBox.height>800);
-  if(!tall.length){res.push({id:6,label:"Sections ≤ 800px",status:"pass",finding:`All ${sections.length} section(s) within 800px.`})}
-  else{res.push({id:6,label:"Sections ≤ 800px",status:"fail",finding:`${tall.length} section(s) exceed 800px.`,action:"Split tall sections into multiple viewport-sized modules.",details:tall.map(n=>`"${n.name}" — ${Math.round(n.absoluteBoundingBox.height)}px`)})}
+  const isHero=n=>/\b(hero|banner|jumbotron|splash|header)\b/i.test(n.name||"");
+  const tall=sections.filter(n=>{
+    const h=n.absoluteBoundingBox.height;
+    return isHero(n)?h>1000:h>800;
+  });
+  if(!tall.length){res.push({id:6,label:"Section Height",status:"pass",finding:`All ${sections.length} section(s) within limits (sections ≤800px, heroes ≤1000px).`})}
+  else{res.push({id:6,label:"Section Height",status:"fail",finding:`${tall.length} section(s) exceed their height limit.`,action:"Keep standard sections under 800px. Heroes/banners may be up to 1000px.",details:tall.map(n=>`"${n.name}" — ${Math.round(n.absoluteBoundingBox.height)}px (limit: ${isHero(n)?1000:800}px)`)})}
 
   // 7. Fonts
   next("Font sources");
@@ -608,15 +617,16 @@ function audit(doc,imgData){
   else if(pct>=85){res.push({id:8,label:"Grid Alignment",status:"pass",finding:`${pct}% of ${checked.length} elements align to ${gd}.`})}
   else{res.push({id:8,label:"Grid Alignment",status:pct>=60?"warn":"fail",finding:`${pct}% of ${checked.length} elements align to ${gd}. ${offGrid.length} off-grid.`,action:"Enable grid (Shift+G) and snap element edges to column/margin lines.",details:offGrid.slice(0,10).map(i=>`"${i.name}" — x:${i.x}, ${i.off}px from margin, w:${i.w}px`)})}
 
-  // 9. Photo ratios
+  // 9. Photo ratios — exclude Logo layers
   next("Photo ratios");
-  const imgNodes=all.filter(n=>n.fills?.some(f=>f.type==="IMAGE")&&n.absoluteBoundingBox);
+  const isLogo=n=>/\blogo\b/i.test(n.name||"");
+  const imgNodes=all.filter(n=>!isLogo(n)&&n.fills?.some(f=>f.type==="IMAGE")&&n.absoluteBoundingBox);
   const badRatio=imgNodes.filter(n=>!approvedRatio(n.absoluteBoundingBox.width,n.absoluteBoundingBox.height));
-  if(!imgNodes.length){res.push({id:9,label:"Photo Ratios",status:"warn",finding:"No images detected.",action:"Use 1:1, 1:2, 2:3, 3:4, or 3:5 ratios."})}
-  else if(!badRatio.length){res.push({id:9,label:"Photo Ratios",status:"pass",finding:`All ${imgNodes.length} image(s) use approved ratios.`})}
-  else{res.push({id:9,label:"Photo Ratios",status:"fail",finding:`${badRatio.length} non-standard ratio(s).`,action:"Resize to 1:1, 1:2, 2:3, 3:4, or 3:5.",details:badRatio.map(n=>`"${n.name}" — ${Math.round(n.absoluteBoundingBox.width)}×${Math.round(n.absoluteBoundingBox.height)}px (${(n.absoluteBoundingBox.width/n.absoluteBoundingBox.height).toFixed(2)})`)})}
+  if(!imgNodes.length){res.push({id:9,label:"Photo Ratios",status:"warn",finding:"No images detected (logos excluded).",action:"Use 1:1, 1:2, 2:3, 3:4, or 3:5 ratios."})}
+  else if(!badRatio.length){res.push({id:9,label:"Photo Ratios",status:"pass",finding:`All ${imgNodes.length} image(s) use approved ratios (logos excluded).`})}
+  else{res.push({id:9,label:"Photo Ratios",status:"fail",finding:`${badRatio.length} non-standard ratio(s) (logos excluded).`,action:"Resize to 1:1, 1:2, 2:3, 3:4, or 3:5.",details:badRatio.map(n=>`"${n.name}" — ${Math.round(n.absoluteBoundingBox.width)}×${Math.round(n.absoluteBoundingBox.height)}px (${(n.absoluteBoundingBox.width/n.absoluteBoundingBox.height).toFixed(2)})`)})}
 
-  // 10. Stock photos
+  // 10. Stock photos — exclude Logo layers (imgNodes already filtered above)
   next("Stock photos");
   if(!imgNodes.length){res.push({id:10,label:"Photos Are Stock",status:"warn",finding:"No images detected.",action:"Use licensed stock from iStock, Shutterstock, Freepik, or Envato."})}
   else if(!imgData||!Object.keys(imgData).length){res.push({id:10,label:"Photos Are Stock",status:"warn",finding:`${imgNodes.length} image(s) found — source URLs could not be verified.`,action:"Rename layers with stock source URLs, or manually confirm licensing.",details:imgNodes.slice(0,6).map(n=>`"${n.name}"`)})}
@@ -644,12 +654,70 @@ function audit(doc,imgData){
   else{res.push({id:12,label:"No Underline on Headings",status:"fail",finding:`${underlined.length} heading(s) use underline.`,action:"Remove underline. Use weight, size, or color for emphasis.",details:underlined.map(n=>`"${n.name}": "${(n.characters||"").slice(0,40)}"`) })}
 
   // 13. Hover states
+  // The Figma REST API exposes hover interactions in TWO places:
+  // 1. node.reactions[] — standard prototype reactions (trigger.type = "ON_HOVER")
+  // 2. node.interactions[] — added later for variant interactions (same shape as reactions)
+  // Additionally, reactions on instances are sometimes missing from the REST API (known bug).
+  // Most reliable fallback: check node.componentProperties for a "State=Hover" or "Hover=true"
+  // value, which proves the component set has a Hover variant even if reactions aren't returned.
   next("Hover states");
-  const hovers=all.filter(n=>/\bhover(ed)?\b|state=hover/i.test(n.name||""));
-  const ctas=all.filter(n=>/\b(button|btn|cta|link|nav|action)\b/i.test(n.name||"")&&["COMPONENT","COMPONENT_SET","INSTANCE"].includes(n.type));
-  if(hovers.length){res.push({id:13,label:"Hover States",status:"pass",finding:`${hovers.length} hover variant(s) found.`})}
-  else if(ctas.length){res.push({id:13,label:"Hover States",status:"warn",finding:`${ctas.length} CTA(s) found but no hover variants in scope.`,action:"Add Hover variants to each button component.",details:ctas.slice(0,5).map(n=>`"${n.name}"`)})}
-  else{res.push({id:13,label:"Hover States",status:"warn",finding:"No CTAs found in scope. Verify hover states manually.",action:"Create Hover variants for all interactive elements."})}
+
+  function isHoverTrigger(r){
+    const t=(r.trigger?.type||"").toUpperCase();
+    if(t==="ON_HOVER"||t==="MOUSE_ENTER")return true;
+    // Empty trigger bug fallback: CHANGE_TO with no trigger type
+    if(!t&&(r.action?.navigation==="CHANGE_TO"||(r.actions||[]).some(a=>a?.navigation==="CHANGE_TO")))return true;
+    return false;
+  }
+
+  function nodeHasHover(n){
+    // Check reactions[] (standard)
+    if((n.reactions||[]).some(isHoverTrigger))return true;
+    // Check interactions[] (variant interactions field added in REST API later)
+    if((n.interactions||[]).some(isHoverTrigger))return true;
+    // Check componentProperties on instance: State=Hover or any prop value containing "hover"
+    const cp=n.componentProperties||{};
+    if(Object.values(cp).some(v=>/hover/i.test(String(v?.value||v||""))))return true;
+    return false;
+  }
+
+  const allInstances=all.filter(n=>n.type==="INSTANCE");
+
+  // Any instance with a hover signal
+  const instancesWithHover=allInstances.filter(nodeHasHover);
+
+  // Also check COMPONENT nodes in scope (in case component definitions are in the artboard)
+  const compsWithHover=all.filter(n=>
+    (n.type==="COMPONENT"||n.type==="COMPONENT_SET")&&nodeHasHover(n)
+  );
+  // And component set children (variant nodes)
+  const variantsWithHover=all.filter(n=>n.type==="COMPONENT_SET")
+    .flatMap(s=>(s.children||[]).filter(nodeHasHover));
+
+  const passNodes=[...instancesWithHover,...compsWithHover,...variantsWithHover];
+
+  if(passNodes.length>0){
+    res.push({id:13,label:"Hover States",status:"pass",
+      finding:`${passNodes.length} element(s) have hover interactions: ${passNodes.slice(0,4).map(n=>`"${n.name}"`).join(", ")}.`});
+  } else if(allInstances.length>0){
+    // Last signal: does any instance's componentProperties mention a Hover variant at all?
+    const hasHoverVariant=allInstances.some(n=>{
+      const cp=n.componentProperties||{};
+      return Object.entries(cp).some(([k,v])=>/state|variant|mode/i.test(k)&&/hover/i.test(String(v?.value||v||"")));
+    });
+    if(hasHoverVariant){
+      res.push({id:13,label:"Hover States",status:"pass",
+        finding:"Hover variant states detected on component instances via componentProperties."});
+    } else {
+      res.push({id:13,label:"Hover States",status:"warn",
+        finding:`${allInstances.length} instance(s) found but none have detectable hover interactions. This may be a Figma REST API limitation — reactions on variant interactions are not always returned for node-level fetches.`,
+        action:"Verify manually: select each button instance → Prototype tab → confirm 'While Hovering → Change to → Hover' is set on the source component."});
+    }
+  } else {
+    res.push({id:13,label:"Hover States",status:"warn",
+      finding:"No component instances found in this artboard scope.",
+      action:"Ensure buttons are placed as component instances with While Hovering → Change to variant set in the source component's Prototype panel."});
+  }
 
   return res
 }
@@ -673,9 +741,46 @@ function renderResults(results,meta){
   else off("priority");
   on("summary");
   on("rerunBtn");
+  if(results.length===13&&results.every(r=>r.status==="pass")) launchConfetti();
 }
 
 function toggle(id){$(`body-${id}`).classList.toggle("open");$(`chev-${id}`).classList.toggle("open")}
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+function launchConfetti(){
+  const canvas=document.createElement("canvas");
+  canvas.id="confetti-canvas";
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx=canvas.getContext("2d");
+  const COLORS=["#6c63ff","#a78bfa","#10b981","#f59e0b","#f43f5e","#ffffff","#38bdf8","#fb923c"];
+  const pieces=Array.from({length:160},()=>({
+    x:Math.random()*canvas.width,y:Math.random()*-canvas.height,
+    w:6+Math.random()*8,h:10+Math.random()*6,
+    r:Math.random()*Math.PI*2,
+    vx:(Math.random()-0.5)*4,vy:2+Math.random()*4,
+    vr:(Math.random()-0.5)*0.2,
+    color:COLORS[Math.floor(Math.random()*COLORS.length)],
+    opacity:1
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.vy+=0.05;
+      if(frame>180)p.opacity=Math.max(0,p.opacity-0.012);
+      ctx.save();ctx.globalAlpha=p.opacity;
+      ctx.translate(p.x,p.y);ctx.rotate(p.r);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    frame++;
+    if(frame<260)requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  draw();
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded",()=>{
