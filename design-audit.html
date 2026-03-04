@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--surface:#111118;--surface2:#1a1a24;
+  --border:#2a2a38;--border2:#3a3a50;--text:#e8e8f0;--muted:#7070a0;
+  --accent:#6c63ff;--accent2:#a78bfa;
+  --pass:#10b981;--pass-bg:#052e20;--pass-bd:#064e35;
+  --fail:#f43f5e;--fail-bg:#2d0a14;--fail-bd:#4d1220;
+  --warn:#f59e0b;--warn-bg:#2d1f06;--warn-bd:#4d3510;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Syne',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh}
+header{border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;gap:14px;background:var(--surface);position:sticky;top:0;z-index:100}
+.logo{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+header h1{font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-0.02em}
+.badge{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:4px;border:1px solid var(--border)}
+.main{padding:36px 32px;max-width:860px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:22px}
+/* Form */
+.form-intro{padding:26px 26px 0;margin-bottom:18px}
+.eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.eyebrow-line{width:22px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px}
+.eyebrow-text{font-family:var(--mono);font-size:10px;color:var(--accent2);letter-spacing:.12em;text-transform:uppercase}
+.form-intro h2{font-family:var(--display);font-size:23px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px;line-height:1.2}
+.form-intro p{color:var(--muted);font-size:13px;line-height:1.7;max-width:460px;margin-bottom:12px}
+.tags{display:flex;flex-wrap:wrap;gap:12px}
+.tag-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.tag-dot{width:5px;height:5px;border-radius:50%;background:var(--pass);box-shadow:0 0 5px var(--pass);flex-shrink:0}
+.divider{height:1px;background:var(--border);margin:0 26px 22px}
+.fields{padding:0 26px 26px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+.field label{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.field input{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;transition:border-color .2s;width:100%}
+.field input:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--muted)}
+.link-preview{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:-4px;margin-bottom:11px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;display:none;gap:16px;flex-wrap:wrap}
+.link-preview strong{color:var(--text)}
+/* Buttons */
+.btn{border:none;border-radius:10px;cursor:pointer;font-family:var(--display);font-weight:700;transition:opacity .2s,transform .1s;letter-spacing:-.01em}
+.btn:hover{opacity:.88;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-primary{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;margin-top:2px}
+.btn-ghost{padding:7px 13px;background:transparent;color:var(--muted);border:1px solid var(--border)!important;font-family:var(--sans)!important;font-size:12px;font-weight:400!important;border-radius:8px}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2)!important}
+.btn-run{padding:11px 22px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:7px}
+/* Progress / error */
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-top:13px;overflow:hidden;display:none}
+.progress-bar.on,.progress-label.on{display:block}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease}
+.progress-label{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:7px;display:none}
+.error-box{background:var(--fail-bg);border:1px solid var(--fail-bd);border-radius:10px;padding:12px 16px;color:var(--fail);font-size:13px;margin-top:11px;display:none}
+.error-box.on{display:block}
+/* Preview */
+.pv-header{padding:22px 26px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.pv-project{font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(90deg,var(--text),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:5px}
+.pv-meta{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tag{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:2px 7px;font-size:10px;color:var(--accent2);font-family:var(--mono);letter-spacing:.05em}
+.thumb{width:100%;max-width:240px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;align-self:flex-start}
+.thumb img{width:100%;height:100%;display:block;object-fit:cover}
+.pv-body{display:grid;grid-template-columns:1fr 1fr}
+.pv-section{padding:20px 26px;border-right:1px solid var(--border)}
+.pv-section:last-child{border-right:none}
+.sec-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.theme-text{font-size:13px;color:#a0a0c0;line-height:1.7}
+.theme-loading{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.theme-loading::before{content:"";width:10px;height:10px;border:1.5px solid var(--muted);border-top-color:var(--accent2);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+.btn-rerun{display:none;margin-bottom:16px;padding:9px 18px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--accent2);font-family:var(--mono);font-size:12px;cursor:pointer;transition:border-color .2s,color .2s}
+.btn-rerun.on{display:inline-flex;align-items:center;gap:7px}
+.btn-rerun:hover{border-color:var(--accent);color:var(--accent)}
+.kw-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.kw{background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:2px 9px;font-size:11px;color:var(--text);font-family:var(--mono)}
+.sg{display:flex;flex-direction:column;gap:12px}
+.sg-label{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:5px}
+.swatches{display:flex;gap:5px;flex-wrap:wrap}
+.swatch{width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,.08);cursor:default;position:relative;flex-shrink:0}
+.swatch:hover::after{content:attr(data-hex);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:10}
+.font-row{display:flex;flex-direction:column;gap:2px}
+.font-name{font-size:13px;color:var(--text);font-weight:500}
+.font-meta{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.tone-row{display:flex;flex-wrap:wrap;gap:5px}
+.tone{font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--muted);font-family:var(--mono)}
+.pv-footer{padding:16px 26px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface2)}
+.pv-footer-note{font-size:12px;color:var(--muted);line-height:1.5}
+/* Results */
+.summary{display:none}
+.summary.on{display:block}
+.score-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.score-card{border-radius:12px;padding:15px;text-align:center;border:1px solid}
+.score-card.pass{background:var(--pass-bg);border-color:var(--pass-bd)}
+.score-card.fail{background:var(--fail-bg);border-color:var(--fail-bd)}
+.score-card.warn{background:var(--warn-bg);border-color:var(--warn-bd)}
+.score-card .icon{font-size:20px;margin-bottom:4px}
+.score-card .count{font-family:var(--display);font-size:32px;font-weight:800;line-height:1}
+.score-card.pass .count{color:var(--pass)}.score-card.fail .count{color:var(--fail)}.score-card.warn .count{color:var(--warn)}
+.score-card .clabel{font-family:var(--mono);font-size:10px;margin-top:3px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.meta-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:18px;display:flex;gap:18px;font-size:12px;flex-wrap:wrap;align-items:center}
+.meta-bar span{color:var(--muted)}.meta-bar strong{color:var(--text);font-weight:500}
+.results{display:flex;flex-direction:column;gap:7px}
+.rule-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s;animation:up .3s ease both}
+.rule-card:hover{border-color:var(--border2)}
+.rule-header{display:flex;align-items:center;gap:11px;padding:13px 17px;cursor:pointer;user-select:none;background:transparent;border:none;width:100%;color:var(--text);text-align:left}
+.rule-num{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:20px}
+.rule-name{flex:1;font-size:13px;font-weight:500}
+.pill{font-family:var(--mono);font-size:9px;font-weight:500;padding:3px 9px;border-radius:20px;letter-spacing:.1em;text-transform:uppercase;border:1px solid;flex-shrink:0}
+.pill.pass{color:var(--pass);background:var(--pass-bg);border-color:var(--pass-bd)}
+.pill.fail{color:var(--fail);background:var(--fail-bg);border-color:var(--fail-bd)}
+.pill.warn{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-bd)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot.pass{background:var(--pass);box-shadow:0 0 5px var(--pass)}
+.dot.fail{background:var(--fail);box-shadow:0 0 5px var(--fail)}
+.dot.warn{background:var(--warn);box-shadow:0 0 5px var(--warn)}
+.chev{color:var(--muted);font-size:10px;transition:transform .2s;flex-shrink:0}
+.chev.open{transform:rotate(180deg)}
+.rule-body{border-top:1px solid var(--border);padding:14px 17px;background:var(--surface2);display:none}
+.rule-body.open{display:block}
+.finding{font-size:13px;color:#a0a0c0;line-height:1.65}
+.action-box{margin-top:10px;padding:10px 13px;border-radius:8px;font-size:12px;line-height:1.6;border:1px solid}
+.action-box.fail{color:#ffb3bf;background:var(--fail-bg);border-color:var(--fail-bd)}
+.action-box.warn{color:#ffd580;background:var(--warn-bg);border-color:var(--warn-bd)}
+.action-box strong{font-weight:600;display:block;margin-bottom:2px}
+.detail-list{margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;max-height:130px;overflow-y:auto;line-height:1.8}
+.d-fail{color:var(--fail)}.d-warn{color:var(--warn)}
+a.ext-link{color:var(--accent2);font-size:11px;font-family:var(--mono);text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:5px}
+a.ext-link:hover{text-decoration:underline}
+.priority{margin-top:20px;background:var(--fail-bg);border:1px solid var(--fail-bd);border-radius:12px;padding:18px;display:none}
+.priority.on{display:block}
+.priority h3{font-family:var(--display);font-size:13px;color:var(--fail);margin-bottom:11px;font-weight:700}
+.priority-list{display:flex;flex-direction:column;gap:8px}
+.priority-item{display:flex;gap:10px;align-items:flex-start}
+.pnum{width:20px;height:20px;background:var(--fail);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
+.ptext{font-size:12px;color:#ffb3bf;line-height:1.5}
+.ptext strong{color:var(--fail);font-weight:600}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:up .35s ease both}
+@media(max-width:600px){.main{padding:20px 16px}.score-cards{gap:7px}.score-card{padding:11px 8px}.score-card .count{font-size:26px}.pv-body{grid-template-columns:1fr}.pv-section{border-right:none;border-bottom:1px solid var(--border)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🔍</div>
+  <h1>Design Audit</h1>
+  <span class="badge">13 Rules</span>
+</header>
+<main class="main">
+
+  <!-- Step 1: Form -->
+  <div class="card" id="formCard">
+    <div class="form-intro">
+      <div class="eyebrow"><div class="eyebrow-line"></div><span class="eyebrow-text">Design Quality System</span></div>
+      <h2>Is your design<br>ready to ship?</h2>
+      <p>Paste a Figma link and run 13 automated checks — WCAG AA contrast, grid alignment, typography, photo ratios, and more. Every issue ships with a fix.</p>
+      <div class="tags">
+        <div class="tag-item"><span class="tag-dot"></span>Accessibility (AA)</div>
+        <div class="tag-item"><span class="tag-dot"></span>Typography</div>
+        <div class="tag-item"><span class="tag-dot"></span>Grid alignment</div>
+        <div class="tag-item"><span class="tag-dot"></span>Photography</div>
+        <div class="tag-item"><span class="tag-dot"></span>CTA patterns</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="fields">
+      <div class="field">
+        <label>Project Name</label>
+        <input type="text" id="projectName" placeholder="" />
+      </div>
+      <div class="field">
+        <label>Personal Access Token <span id="tokenSaved" style="color:var(--pass);font-family:var(--mono);font-size:9px;letter-spacing:.06em;display:none">✓ SAVED</span></label>
+        <input type="password" id="token" placeholder="figd_xxxxxxxxxxxx" autocomplete="off" oninput="onToken(this.value)" />
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Stored locally in your browser — never sent anywhere except Figma.</span>
+      </div>
+      <div class="field">
+        <label>Figma Link</label>
+        <input type="text" id="figmaLink" placeholder="https://www.figma.com/design/…?node-id=…" oninput="onLink(this.value)" />
+      </div>
+      <input type="hidden" id="fileKey" />
+      <input type="hidden" id="nodeId" />
+      <div class="link-preview" id="linkPreview">
+        <span>File: <strong id="pvFile"></strong></span>
+        <span>Node: <strong id="pvNode"></strong></span>
+        <span id="pvCtx" style="color:var(--accent2)"></span>
+      </div>
+      <button class="btn btn-primary" id="previewBtn" onclick="runPreview()">Preview Design →</button>
+      <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-label" id="progressLabel"></div>
+      <div class="error-box" id="errorBox"></div>
+    </div>
+  </div>
+
+  <!-- Step 2: Preview -->
+  <div id="previewStep" style="display:none">
+    <div class="card fade-up" id="previewCard"></div>
+  </div>
+
+  <!-- Step 3: Results -->
+  <div class="summary" id="summary">
+    <button class="btn-rerun" id="rerunBtn" onclick="goBack()">↩ Re-run Audit</button>
+    <div class="score-cards">
+      <div class="score-card pass"><div class="icon">✅</div><div class="count" id="passCount">0</div><div class="clabel">Passed</div></div>
+      <div class="score-card fail"><div class="icon">❌</div><div class="count" id="failCount">0</div><div class="clabel">Failed</div></div>
+      <div class="score-card warn"><div class="icon">⚠️</div><div class="count" id="warnCount">0</div><div class="clabel">Manual</div></div>
+    </div>
+    <div class="meta-bar" id="metaBar"></div>
+    <div class="results" id="results"></div>
+    <div class="priority" id="priority"><h3>🔥 Priority Fixes</h3><div class="priority-list" id="priorityList"></div></div>
+  </div>
+
+</main>
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const GF=["inter","roboto","open sans","lato","montserrat","raleway","poppins","nunito","source sans","playfair","merriweather","oswald","ubuntu","pt sans","pt serif","noto sans","work sans","rubik","karla","manrope","dm sans","outfit","figtree","plus jakarta","space grotesk","syne","bricolage","instrument sans","geist","lexend","libre baskerville","cormorant","eb garamond","crimson","literata","domine","spectral","lora","josefin sans","jost","barlow","mulish","cabin","quicksand","exo","titillium","yanone kaffeesatz","archivo","heebo","fira sans","source code","jetbrains mono","space mono","ibm plex","dm mono","inconsolata","overpass","dm serif","fraunces","cabinet grotesk","satoshi","general sans","clash display","clash grotesk","switzer","neue montreal","graphik","circular","gt walsheim","soehne","aktiv grotesk"];
+const GRIDS=[{label:"Mobile",minW:0,maxW:767,cols:1,margin:100,gutter:20},{label:"Tablet",minW:768,maxW:1279,cols:1,margin:240,gutter:20},{label:"Desktop",minW:1280,maxW:9999,cols:12,margin:320,gutter:20}];
+const RATIOS=[{label:"1:1",val:1},{label:"1:2",val:.5},{label:"2:3",val:2/3},{label:"3:4",val:.75},{label:"3:5",val:.6}];
+const STOCK=["istockphoto.com","shutterstock.com","freepik.com","elements.envato.com","envato.com","unsplash.com","pexels.com","stock.adobe.com"];
+const NAMES=["Horizon","Vantage","Lumio","Drifter","Corale","Qubit","Zephyr","Fable","Mosaic","Noma","Pillar","Kova","Solum","Brace","Elara"];
+const WT={100:"Thin",200:"ExtraLight",300:"Light",400:"Regular",500:"Medium",600:"SemiBold",700:"Bold",800:"ExtraBold",900:"Black"};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const on=id=>$(id).classList.add("on");
+const off=id=>$(id).classList.remove("on");
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const tick=()=>new Promise(r=>setTimeout(r,40));
+const show=id=>$(id).style.display="";
+const hide=id=>$(id).style.display="none";
+
+function setProgress(n,t,l){$("progressFill").style.width=Math.round(n/t*100)+"%";$("progressLabel").textContent=l}
+function showProg(l){on("progressBar");on("progressLabel");setProgress(0,13,l)}
+function hideProg(){off("progressBar");off("progressLabel")}
+
+// ── Colour math ───────────────────────────────────────────────────────────────
+function lum(r,g,b){return[r,g,b].map(c=>{c/=255;return c<=.03928?c/12.92:((c+.055)/1.055)**2.4}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0)}
+function contrast(a,b){const[hi,lo]=lum(...a)>lum(...b)?[lum(...a),lum(...b)]:[lum(...b),lum(...a)];return(hi+.05)/(lo+.05)}
+function fillRGB(f){if(!f?.color)return null;const{r,g,b}=f.color;return[Math.round(r*255),Math.round(g*255),Math.round(b*255)]}
+function fillHex(f){const rgb=fillRGB(f);return rgb?"#"+rgb.map(v=>v.toString(16).padStart(2,"0")).join(""):null}
+
+// ── Node traversal ────────────────────────────────────────────────────────────
+function allNodes(n,acc=[]){acc.push(n);n.children?.forEach(c=>allNodes(c,acc));return acc}
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+function gridFor(w){return GRIDS.find(g=>w>=g.minW&&w<=g.maxW)||GRIDS[2]}
+function snapPts(fx,fw,g){const iw=fw-g.margin*2,cw=g.cols>1?(iw-(g.cols-1)*g.gutter)/g.cols:iw;const pts=[fx,fx+fw,fx+g.margin,fx+fw-g.margin];for(let i=0;i<g.cols;i++){const cs=fx+g.margin+i*(cw+g.gutter);pts.push(cs,cs+cw)}return pts}
+function snapped(x,w,pts,tol=6){return pts.some(p=>Math.abs(x-p)<=tol)||pts.some(p=>Math.abs(x+w-p)<=tol)}
+function approvedRatio(w,h){if(!w||!h)return null;const r=w/h;return RATIOS.find(a=>Math.abs(r-a.val)<.09)?.label||null}
+
+// ── Figma API ─────────────────────────────────────────────────────────────────
+async function figmaFetch(path,token){
+  const base=`https://api.figma.com/v1${path}`,proxy=`https://corsproxy.io/?url=${encodeURIComponent(base)}`,h={"X-Figma-Token":token};
+  let res;
+  try{res=await fetch(base,{headers:h});if(!res.ok)throw 0}catch{res=await fetch(proxy,{headers:h})}
+  if(!res.ok){const t=await res.text();throw new Error(`Figma ${res.status}: ${t.slice(0,200)}`)}
+  return res.json()
+}
+async function fetchNode(fk,ni,tok){
+  setProgress(1,13,"Connecting…");
+  const d=await figmaFetch(`/files/${fk}/nodes?ids=${ni}&geometry=paths`,tok);
+  const key=Object.keys(d.nodes||{})[0],doc=d.nodes?.[key]?.document;
+  if(!doc)throw new Error("Node not found. Check your Figma link.");
+  return doc
+}
+async function fetchThumb(fk,ni,tok){
+  try{const id=ni.replace(/-/,":");const d=await figmaFetch(`/images/${fk}?ids=${id}&format=png&scale=0.2`,tok);return Object.values(d.images||{})[0]||null}catch{return null}
+}
+
+// ── Link parsing ──────────────────────────────────────────────────────────────
+function parseLink(url){
+  return{fileKey:url.match(/figma\.com\/(?:design|file)\/([a-zA-Z0-9]+)/)?.[1]||"",nodeId:url.match(/node-id=([^&\s]+)/)?.[1]?decodeURIComponent(url.match(/node-id=([^&\s]+)/)[1]):""};
+}
+function titleCase(s){return s.replace(/\w\S*/g,t=>t[0].toUpperCase()+t.slice(1).toLowerCase())}
+function artCtx(name){
+  const n=(name||"").toLowerCase();
+  const isHome=/home|landing|index|hero/.test(n);
+  const isDesk=/desktop|1440|1280|1920|web/.test(n)||!/mobile|tablet|ipad|iphone|375|390|768/.test(n);
+  const page=isHome?"Homepage":"",dev=isDesk?"Desktop":/mobile|375|390|iphone/.test(n)?"Mobile":/tablet|768|ipad/.test(n)?"Tablet":"";
+  return{isHome,isDesk,label:[page,dev].filter(Boolean).join(" · ")}
+}
+
+function onLink(url){
+  const{fileKey,nodeId}=parseLink(url);
+  $("fileKey").value=fileKey;$("nodeId").value=nodeId;
+  $("pvFile").textContent=fileKey||"—";$("pvNode").textContent=nodeId||"—";
+  $("linkPreview").style.display=(fileKey||nodeId)?"flex":"none";
+  const seg=url.match(/figma\.com\/(?:design|file)\/[^/]+\/([^?]+)/)?.[1];
+  if(seg&&!$("projectName").value)$("projectName").value=titleCase(decodeURIComponent(seg).replace(/-/g," ").split(/[/|–]/)[0].trim());
+  const ctx=artCtx(seg?decodeURIComponent(seg):"");
+  $("pvCtx").textContent=ctx.label?`✦ ${ctx.label}`:"";
+}
+
+// ── Style guide ───────────────────────────────────────────────────────────────
+function extractSG(doc){
+  const all=allNodes(doc);
+  // Colors
+  const cm={};
+  all.forEach(n=>[...(n.fills||[]),...(n.strokes||[])].forEach(f=>{if(f.type!=="SOLID"||f.visible===false)return;const h=fillHex(f);if(h&&h!=="#000000"&&h!=="#ffffff")cm[h]=(cm[h]||0)+1}));
+  const colors=Object.entries(cm).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([h])=>h);
+  // Fonts
+  const fm={};
+  all.filter(n=>n.type==="TEXT"&&n.style?.fontFamily).forEach(n=>{const k=n.style.fontFamily;if(!fm[k])fm[k]={sizes:new Set(),weights:new Set(),count:0};fm[k].count++;fm[k].sizes.add(n.style.fontSize);fm[k].weights.add(n.style.fontWeight)});
+  const fonts=Object.entries(fm).sort((a,b)=>b[1].count-a[1].count).slice(0,3).map(([f,d])=>({fam:f,sizes:[...d.sizes].sort((a,b)=>b-a).slice(0,3).join(", ")+"px",weights:[...d.weights].sort((a,b)=>a-b).map(w=>WT[w]||w).join(", ")}));
+  // Tones
+  const tones=[];
+  const bgFill=(doc.fills||[]).find(f=>f.type==="SOLID"&&f.visible!==false);
+  const bgRgb=bgFill?fillRGB(bgFill):null;
+  const isDark=bgRgb?lum(...bgRgb)<.15:true;
+  tones.push(isDark?"Dark mode":"Light mode");
+  if(all.some(n=>(n.fills||[]).some(f=>/GRADIENT/.test(f.type)&&f.visible!==false)))tones.push("Gradient accents");
+  const imgs=all.filter(n=>n.fills?.some(f=>f.type==="IMAGE")).length;
+  if(imgs>3)tones.push("Image-rich");
+  const rounded=all.filter(n=>(n.cornerRadius||0)>8).length;
+  if(rounded>5)tones.push("Rounded UI");else if(!rounded&&all.filter(n=>n.type==="RECTANGLE").length>3)tones.push("Sharp / flat");
+  const maxFs=Math.max(0,...all.filter(n=>n.type==="TEXT").map(n=>n.style?.fontSize||0));
+  if(maxFs>=64)tones.push("Display typography");else if(maxFs>=40)tones.push("Bold headlines");
+  const tc=all.filter(n=>n.type==="TEXT").length,fw=doc.absoluteBoundingBox?.width||0,fh=doc.absoluteBoundingBox?.height||0;
+  const density=fw&&fh?tc/((fw*fh)/100000):0;
+  if(density>8)tones.push("Content-dense");else if(density<2&&tc>0)tones.push("Spacious layout");
+  // Keywords (quick local pass — AI will enrich this async)
+  const rawTxt=all.filter(n=>n.type==="TEXT").map(n=>n.characters||"").join(" ");
+  return{colors,fonts,tones,rawTxt,theme:null}
+}
+
+async function enrichTheme(doc){
+  const all=allNodes(doc);
+
+  // Collect text nodes with their font size so we can distinguish H1 from body
+  const textNodes=[];
+  all.forEach(n=>{
+    if(n.type==="TEXT"){
+      const t=(n.characters||"").trim();
+      if(t) textNodes.push({text:t, fontSize:n.style?.fontSize||0});
+    }
+  });
+
+  if(!textNodes.length){
+    return{industry:"Design",service:"No text found in this artboard.",summary:""};
+  }
+
+  // Sort by font size descending — largest text first (likely the H1/hero headline)
+  textNodes.sort((a,b)=>b.fontSize-a.fontSize);
+
+  // Build structured text dump: H1 first, then body copy (smaller sizes)
+  const maxFs=textNodes[0]?.fontSize||0;
+  const h1Nodes=textNodes.filter(n=>n.fontSize>=maxFs*0.8).slice(0,3);
+  const bodyNodes=textNodes.filter(n=>n.fontSize<maxFs*0.8&&n.text.split(" ").length>4).slice(0,30);
+  const otherNodes=textNodes.filter(n=>n.fontSize<maxFs*0.8&&n.text.split(" ").length<=4).slice(0,20);
+
+  const structured=
+    `PAGE TITLE / H1:\n${h1Nodes.map(n=>n.text).join("\n")}\n\n`+
+    `BODY COPY / DESCRIPTIONS:\n${bodyNodes.map(n=>n.text).join("\n")}\n\n`+
+    `LABELS / BUTTONS / NAV:\n${otherNodes.map(n=>n.text).join(" · ")}`;
+
+  const prompt=`You are reading text scraped from a Figma landing page design for a client's business.
+
+${structured.slice(0,3500)}
+
+Your job:
+1. Identify the industry this business operates in. Choose ONE word from this list or pick the closest match: Calibration, Law, Education, AI, Collectibles, Plumbing, Packaging, Logistics, Healthcare, Sports, Military, Music, Finance, Marketing, Media, Software, Clinic, Trucking, Therapy, Real Estate, Retail, Food, Construction, Consulting, Security, Insurance, Travel, Energy, Fashion, Agriculture, Automotive, Architecture, Gaming, SaaS, E-commerce, Wellness, Events, HR, Government.
+2. Identify the specific service or product being offered — just a few words (e.g. "fleet tracking software", "tax advisory for startups", "custom packaging solutions").
+3. Write one punchy sentence (max 200 chars) summarizing what this page is selling and who it's for. Be concrete — use actual words from the text.
+
+Respond ONLY with this JSON (no markdown fences, no extra text):
+{"industry":"<one word>","service":"<few words>","summary":"<one sentence>"}`;
+
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,messages:[{role:"user",content:prompt}]})
+    });
+    const d=await res.json();
+    const raw=(d.content?.[0]?.text||"").trim().replace(/^```json|^```|```$/g,"").trim();
+    const parsed=JSON.parse(raw);
+    return{industry:parsed.industry||"",service:parsed.service||"",summary:parsed.summary||""};
+  }catch{
+    return{industry:"",service:"",summary:textNodes.slice(0,3).map(n=>n.text).join(" — ")};
+  }
+}
+
+// ── Preview render ────────────────────────────────────────────────────────────
+function renderPreview(doc,sg,projectName,thumb,themeData){
+  const ctx=artCtx(doc.name||"");
+  const w=Math.round(doc.absoluteBoundingBox?.width||0),h=Math.round(doc.absoluteBoundingBox?.height||0);
+  const swatches=sg.colors.map(c=>`<div class="swatch" style="background:${c}" data-hex="${c}"></div>`).join("");
+  const fontRows=sg.fonts.map(f=>`<div class="font-row"><div class="font-name">${esc(f.fam)}</div><div class="font-meta">${esc(f.sizes)} · ${esc(f.weights)}</div></div>`).join("");
+  const tones=sg.tones.map(t=>`<span class="tone">${esc(t)}</span>`).join("");
+
+  // Thumbnail: enforce artboard aspect ratio so user sees the full page miniature
+  const ratio=h&&w?h/w:1.5;
+  const thumbInner=thumb
+    ?`<div style="width:100%;padding-top:${(ratio*100).toFixed(1)}%;position:relative"><img src="${thumb}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"></div>`
+    :`<div style="width:100%;padding-top:${(ratio*100).toFixed(1)}%;position:relative;display:flex;align-items:center;justify-content:center"><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px">🖼</span></div>`;
+
+  const themeHTML=themeData
+    ?renderThemeHTML(themeData)
+    :`<div class="theme-loading" id="themeLoading">Reading design text…</div>`;
+
+  $("previewCard").innerHTML=`
+    <div class="pv-header">
+      <div style="flex:1;min-width:0">
+        <div class="pv-project">${esc(projectName)}</div>
+        <div class="pv-meta"><span>${esc(doc.name)}</span>${ctx.label?`<span class="tag">${esc(ctx.label)}</span>`:""}<span class="tag">${w}×${h}px</span></div>
+      </div>
+      <div class="thumb" style="max-width:min(220px,38%)">${thumbInner}</div>
+    </div>
+    <div class="pv-body">
+      <div class="pv-section">
+        <div class="sec-label">Subject</div>
+        <div id="themeContainer">${themeHTML}</div>
+      </div>
+      <div class="pv-section">
+        <div class="sec-label">Style Guide</div>
+        <div class="sg">
+          ${sg.colors.length?`<div><div class="sg-label">Colors (${sg.colors.length})</div><div class="swatches">${swatches}</div></div>`:""}
+          ${sg.fonts.length?`<div><div class="sg-label">Typography</div>${fontRows}</div>`:""}
+          ${sg.tones.length?`<div><div class="sg-label">Art Direction</div><div class="tone-row">${tones}</div></div>`:""}
+        </div>
+      </div>
+    </div>
+    <div class="pv-footer">
+      <div class="pv-footer-note">Looking good? Run the 13-rule audit to check accessibility, grid, and more.</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost" onclick="goBack()">← Change</button>
+        <button class="btn btn-run" onclick="runAudit()">Run Audit →</button>
+      </div>
+    </div>`
+}
+
+function renderThemeHTML(d){
+  const ind=d.industry?`<span class="kw" style="border-color:var(--accent);color:var(--accent2)">${esc(d.industry)}</span>`:"";
+  const svc=d.service?`<div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin:8px 0 6px">${esc(d.service)}</div>`:"";
+  const sum=d.summary?`<div class="theme-text">${esc(d.summary)}</div>`:"";
+  return`${ind?`<div class="kw-row" style="margin-bottom:2px">${ind}</div>`:""}${svc}${sum}`;
+}
+
+// ── Token persistence ─────────────────────────────────────────────────────────
+function onToken(val){
+  if(val.trim()){localStorage.setItem("figma_token",val.trim());$("tokenSaved").style.display="inline"}
+  else{localStorage.removeItem("figma_token");$("tokenSaved").style.display="none"}
+}
+
+// ── Step 1: Preview ───────────────────────────────────────────────────────────
+async function runPreview(){
+  const token=$("token").value.trim(),fileKey=$("fileKey").value.trim(),rawNode=$("nodeId").value.trim();
+  off("errorBox");
+  if(!token){$("errorBox").textContent="Please enter your Figma token.";on("errorBox");return}
+  if(!fileKey||!rawNode){$("errorBox").textContent="Please paste a valid Figma link.";on("errorBox");return}
+  const btn=$("previewBtn");btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>Loading…`;
+  showProg("Fetching artboard…");
+  try{
+    const nodeId=rawNode.replace(/-/,":");
+    const doc=await fetchNode(fileKey,nodeId,token);
+    setProgress(8,13,"Extracting style guide…");await tick();
+    if(!$("projectName").value)$("projectName").value=titleCase(doc.name.split(/[/|–-]/)[0].trim());
+    const projectName=$("projectName").value||doc.name;
+    setProgress(11,13,"Fetching thumbnail…");
+    const thumb=await fetchThumb(fileKey,rawNode,token);
+    const sg=extractSG(doc);
+    hideProg();btn.innerHTML="Preview Design →";btn.disabled=false;
+    hide("formCard");show("previewStep");off("summary");
+    renderPreview(doc,sg,projectName,thumb,null); // render immediately with loading state
+    window._doc=doc;
+    window._meta={projectName,name:doc.name,width:doc.absoluteBoundingBox?.width||0,...artCtx(doc.name)};
+    // Enrich theme async — patches the DOM when ready
+    enrichTheme(doc).then(themeData=>{
+      const el=$("themeContainer");
+      if(el) el.innerHTML=renderThemeHTML(themeData);
+    });
+  }catch(e){
+    hideProg();$("errorBox").textContent=`Error: ${e.message}`;on("errorBox");
+    btn.innerHTML="Preview Design →";btn.disabled=false;
+  }
+}
+
+function goBack(){
+  hide("previewStep");show("formCard");off("summary");
+  off("rerunBtn");
+}
+
+// ── Step 2: Audit ─────────────────────────────────────────────────────────────
+async function runAudit(){
+  const doc=window._doc,meta=window._meta;if(!doc)return;
+  $("previewCard").innerHTML=`<div style="padding:40px;text-align:center;color:var(--muted)"><div style="font-size:26px;display:inline-block;animation:spin .9s linear infinite;margin-bottom:10px">⟳</div><p style="font-family:var(--mono);font-size:12px">Running 13 checks…</p><div class="progress-bar on" style="margin:14px auto 0;max-width:280px"><div class="progress-fill" id="progressFill" style="width:0%"></div></div><div class="progress-label on" id="progressLabel" style="text-align:center"> </div></div>`;
+  const token=$("token").value.trim(),fileKey=$("fileKey").value.trim();
+  const imgData=await checkImages(doc,fileKey,token);
+  const results=audit(doc,imgData);
+  hide("previewStep");
+  renderResults(results,meta);
+}
+
+// ── Image checker ─────────────────────────────────────────────────────────────
+async function checkImages(doc,fileKey,token){
+  const nodes=allNodes(doc).filter(n=>n.fills?.some(f=>f.type==="IMAGE")&&n.absoluteBoundingBox);
+  if(!nodes.length)return{};
+  let urls={};
+  try{const ids=nodes.map(n=>n.id).join(",");const d=await figmaFetch(`/images/${fileKey}?ids=${ids}&format=png&scale=0.5`,token);urls=d.images||{}}catch{}
+  const out={};
+  for(const n of nodes){
+    const layer=n.name||"",urlMatch=layer.match(/https?:\/\/[^\s"']+/),url=urlMatch?.[0]||urls[n.id]||null;
+    let status="manual",label="Unknown",meta=null;
+    if(url){try{
+      const r=await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`,{method:"HEAD"});
+      const domain=new URL(url).hostname.replace(/^www\./,"");
+      const isStock=STOCK.some(d=>domain.includes(d));
+      if(isStock){status=r.ok?"pass":"warn";label=domain;if(domain.includes("unsplash"))meta="Unsplash";else if(domain.includes("pexels"))meta="Pexels";else if(domain.includes("istock")||domain.includes("istockphoto"))meta="iStock";else if(domain.includes("shutterstock"))meta="Shutterstock";else if(domain.includes("freepik"))meta="Freepik";else if(domain.includes("envato"))meta="Envato Elements";else if(domain.includes("adobe"))meta="Adobe Stock"}
+      else{status=r.ok?"warn":"fail";label=r.ok?`External: ${domain}`:"URL not reachable"}
+    }catch{label="Could not verify"}}
+    out[n.id]={name:layer,url,status,label,meta,w:Math.round(n.absoluteBoundingBox?.width||0),h:Math.round(n.absoluteBoundingBox?.height||0)};
+  }
+  return out
+}
+
+// ── Core audit engine ─────────────────────────────────────────────────────────
+function audit(doc,imgData){
+  const all=allNodes(doc),res=[];let step=0;
+  const next=l=>{step++;setProgress(step,13,`Checking: ${l}…`)};
+
+  // 1. AA Contrast
+  next("AA Contrast");
+  function bgCandidates(node){const out=[];let cur=node.parent;while(cur){(cur.fills||[]).filter(f=>f.visible!==false).forEach(f=>{if(f.type==="SOLID")out.push(fillRGB(f));else if(/GRADIENT/.test(f.type))(f.gradientStops||[]).forEach(s=>out.push([Math.round(s.color.r*255),Math.round(s.color.g*255),Math.round(s.color.b*255)]))});cur=cur.parent}return out.filter(Boolean)}
+  const texts=all.filter(n=>n.type==="TEXT"&&n.fills?.length),fails1=[],imgBg=[];
+  texts.forEach(n=>{
+    const solidFg=(n.fills||[]).filter(f=>f.visible!==false).find(f=>f.type==="SOLID"),fg=solidFg?fillRGB(solidFg):null;if(!fg)return;
+    const fs=n.style?.fontSize||16,bold=(n.style?.fontWeight||400)>=700,thresh=(fs>=18||(fs>=14&&bold))?3.0:4.5;
+    let cur2=n.parent,hasImg=false;while(cur2){if((cur2.fills||[]).some(f=>f.type==="IMAGE"&&f.visible!==false)){hasImg=true;break}cur2=cur2.parent}
+    if(hasImg){imgBg.push({name:n.name,fg:fillHex(solidFg)});return}
+    const bgs=bgCandidates(n);if(!bgs.length)bgs.push([255,255,255]);
+    let worst=Infinity,worstHex="#ffffff";
+    bgs.forEach(bg=>{const r=contrast(fg,bg);if(r<worst){worst=r;worstHex="#"+bg.map(v=>v.toString(16).padStart(2,"0")).join("")}});
+    if(worst<thresh)fails1.push({name:n.name,ratio:worst.toFixed(2),thresh,fg:fillHex(solidFg),bg:worstHex,samples:bgs.length});
+  });
+  if(!texts.length){res.push({id:1,label:"AA Contrast (ADA)",status:"warn",finding:"No text nodes found.",action:"Verify contrast manually.",link:"https://webaim.org/resources/contrastchecker/"})}
+  else if(!fails1.length&&!imgBg.length){res.push({id:1,label:"AA Contrast (ADA)",status:"pass",finding:`All ${texts.length} text nodes passed — gradient stop sampling included.`})}
+  else{res.push({id:1,label:"AA Contrast (ADA)",status:fails1.length?"fail":"warn",finding:`${fails1.length} failure(s) across ${texts.length} text nodes. ${imgBg.length} over images need manual check.`,action:"Adjust text/bg colors to meet WCAG AA. Add a scrim behind text over images.",details:[...fails1.map(f=>`❌ "${f.name}" — ${f.ratio}:1 vs min ${f.thresh}:1 · ${f.fg} on ${f.bg}${f.samples>1?" (gradient sampled)":""}`),...imgBg.map(f=>`⚠️ "${f.name}" — over image · ${f.fg}`)],link:"https://webaim.org/resources/contrastchecker/"})}
+
+  // 2. Max 12 words per line
+  next("Words per line");
+  const longLines=[];
+  all.filter(n=>n.type==="TEXT"&&n.characters).forEach(n=>{
+    const bw=n.absoluteBoundingBox?.width,fs=n.style?.fontSize||16,ls=n.style?.letterSpacing||0,ff=(n.style?.fontFamily||"").toLowerCase();
+    let cr=/condensed|narrow/.test(ff)?.42:/mono|code/.test(ff)?.60:/serif/.test(ff)?.54:.52;
+    if((n.style?.fontWeight||400)>=700)cr*=1.05;
+    const wpl=bw?Math.floor(bw/(fs*cr+ls)/5.5):null;
+    n.characters.split("\n").forEach(seg=>{const wc=seg.trim().split(/\s+/).filter(Boolean).length;if(!wc)return;if(wpl===null?wc>12:wpl>12&&wc>12)longLines.push({name:n.name,wc,wpl,bw:Math.round(bw||0),fs,preview:seg.slice(0,65)})});
+  });
+  if(!longLines.length){res.push({id:2,label:"Max 12 Words Per Line",status:"pass",finding:"All text within the 12-word-per-line limit."})}
+  else{res.push({id:2,label:"Max 12 Words Per Line",status:"fail",finding:`${longLines.length} segment(s) exceed 12 words per line.`,action:"Reduce container width or shorten copy.",details:longLines.map(l=>`"${l.name}" — ${l.wc} words${l.wpl?`, ~${l.wpl}wpl in ${l.bw}px at ${l.fs}px`:""}: "${l.preview}…"`)})}
+
+  // 3. Max 3 lines
+  next("Max 3 lines");
+  const longBlocks=all.filter(n=>n.type==="TEXT"&&n.characters&&n.characters.split("\n").filter(l=>l.trim()).length>3);
+  if(!longBlocks.length){res.push({id:3,label:"Max 3 Lines",status:"pass",finding:"All text blocks are 3 lines or fewer."})}
+  else{res.push({id:3,label:"Max 3 Lines",status:"fail",finding:`${longBlocks.length} block(s) exceed 3 lines.`,action:"Trim copy or split into multiple components.",details:longBlocks.map(n=>`"${n.name}" — ${n.characters.split("\n").filter(l=>l.trim()).length} lines`)})}
+
+  // 4. No "Read More"
+  next("Vague CTAs");
+  const vague=all.filter(n=>n.type==="TEXT"&&/\bread\s*more\b|\bsee\s*more\b/i.test(n.characters||""));
+  if(!vague.length){res.push({id:4,label:"No 'Read More' CTAs",status:"pass",finding:"No vague CTA labels found."})}
+  else{res.push({id:4,label:"No 'Read More' CTAs",status:"fail",finding:`${vague.length} vague CTA(s).`,action:`Replace with specific labels like "View fleet routes" or "See pricing".`,details:vague.map(n=>`"${n.name}": "${n.characters?.trim()?.slice(0,50)}"`) })}
+
+  // 5. Accent colors
+  next("Accent colors");
+  const accents=[...new Set(all.flatMap(n=>(n.fills||[]).filter(f=>f.type==="SOLID"&&f.visible!==false)).filter(f=>{const[r,g,b]=fillRGB(f)||[0,0,0];return Math.max(r,g,b)-Math.min(r,g,b)>40}).map(fillHex).filter(Boolean))];
+  if(accents.length){res.push({id:5,label:"Accent Colors",status:"pass",finding:`${accents.length} accent color(s): ${accents.slice(0,6).join(", ")}.`})}
+  else{res.push({id:5,label:"Accent Colors",status:"fail",finding:"Only neutrals detected.",action:"Add at least one brand accent color for CTAs and highlights."})}
+
+  // 6. Section height
+  next("Section height");
+  const sections=(doc.children||[]).filter(n=>(n.type==="FRAME"||n.type==="SECTION")&&n.absoluteBoundingBox);
+  const tall=sections.filter(n=>n.absoluteBoundingBox.height>800);
+  if(!tall.length){res.push({id:6,label:"Sections ≤ 800px",status:"pass",finding:`All ${sections.length} section(s) within 800px.`})}
+  else{res.push({id:6,label:"Sections ≤ 800px",status:"fail",finding:`${tall.length} section(s) exceed 800px.`,action:"Split tall sections into multiple viewport-sized modules.",details:tall.map(n=>`"${n.name}" — ${Math.round(n.absoluteBoundingBox.height)}px`)})}
+
+  // 7. Fonts
+  next("Font sources");
+  const fonts=[...new Set(all.filter(n=>n.type==="TEXT"&&n.style?.fontFamily).map(n=>n.style.fontFamily))];
+  const unknown=fonts.filter(f=>!GF.some(g=>f.toLowerCase().includes(g)));
+  if(!fonts.length){res.push({id:7,label:"Fonts: Google / Envato",status:"warn",finding:"No fonts detected.",action:"Verify fonts are from Google Fonts or Envato Elements."})}
+  else if(!unknown.length){res.push({id:7,label:"Fonts: Google / Envato",status:"pass",finding:`${fonts.join(", ")} — all matched.`})}
+  else{res.push({id:7,label:"Fonts: Google / Envato",status:"warn",finding:`Unconfirmed: ${unknown.join(", ")}.`,action:"Verify at fonts.google.com. If unavailable, replace with a licensed alternative."})}
+
+  // 8. Grid alignment
+  next("Grid alignment");
+  const bbox=doc.absoluteBoundingBox,fw=bbox?.width||1440,fx=bbox?.x||0;
+  const grid=gridFor(fw),pts=snapPts(fx,fw,grid);
+  const l1=(doc.children||[]).filter(n=>n.absoluteBoundingBox),l2=l1.flatMap(n=>(n.children||[]).filter(c=>c.absoluteBoundingBox));
+  const checked=[],offGrid=[];
+  [...l1,...l2].forEach(n=>{
+    const{x,width:w,height:h}=n.absoluteBoundingBox;
+    if(w<8||h<8)return;
+    if(Math.abs(x-fx)<=10&&Math.abs(x+w-(fx+fw))<=10)return;
+    if(Math.abs(w-fw)<=10)return;
+    checked.push(n);
+    if(!snapped(x,w,pts))offGrid.push({name:n.name,x:Math.round(x),w:Math.round(w),off:Math.round(Math.abs(x-(fx+grid.margin)))});
+  });
+  const pct=checked.length?Math.round((checked.length-offGrid.length)/checked.length*100):100;
+  const gd=`${grid.label} (${grid.cols}col, ${grid.margin}px margin, ${grid.gutter}px gutter)`;
+  if(!checked.length){res.push({id:8,label:"Grid Alignment",status:"warn",finding:"No inner content elements found.",action:"Ensure content frames are inside the audited node."})}
+  else if(pct>=85){res.push({id:8,label:"Grid Alignment",status:"pass",finding:`${pct}% of ${checked.length} elements align to ${gd}.`})}
+  else{res.push({id:8,label:"Grid Alignment",status:pct>=60?"warn":"fail",finding:`${pct}% of ${checked.length} elements align to ${gd}. ${offGrid.length} off-grid.`,action:"Enable grid (Shift+G) and snap element edges to column/margin lines.",details:offGrid.slice(0,10).map(i=>`"${i.name}" — x:${i.x}, ${i.off}px from margin, w:${i.w}px`)})}
+
+  // 9. Photo ratios
+  next("Photo ratios");
+  const imgNodes=all.filter(n=>n.fills?.some(f=>f.type==="IMAGE")&&n.absoluteBoundingBox);
+  const badRatio=imgNodes.filter(n=>!approvedRatio(n.absoluteBoundingBox.width,n.absoluteBoundingBox.height));
+  if(!imgNodes.length){res.push({id:9,label:"Photo Ratios",status:"warn",finding:"No images detected.",action:"Use 1:1, 1:2, 2:3, 3:4, or 3:5 ratios."})}
+  else if(!badRatio.length){res.push({id:9,label:"Photo Ratios",status:"pass",finding:`All ${imgNodes.length} image(s) use approved ratios.`})}
+  else{res.push({id:9,label:"Photo Ratios",status:"fail",finding:`${badRatio.length} non-standard ratio(s).`,action:"Resize to 1:1, 1:2, 2:3, 3:4, or 3:5.",details:badRatio.map(n=>`"${n.name}" — ${Math.round(n.absoluteBoundingBox.width)}×${Math.round(n.absoluteBoundingBox.height)}px (${(n.absoluteBoundingBox.width/n.absoluteBoundingBox.height).toFixed(2)})`)})}
+
+  // 10. Stock photos
+  next("Stock photos");
+  if(!imgNodes.length){res.push({id:10,label:"Photos Are Stock",status:"warn",finding:"No images detected.",action:"Use licensed stock from iStock, Shutterstock, Freepik, or Envato."})}
+  else if(!imgData||!Object.keys(imgData).length){res.push({id:10,label:"Photos Are Stock",status:"warn",finding:`${imgNodes.length} image(s) found — source URLs could not be verified.`,action:"Rename layers with stock source URLs, or manually confirm licensing.",details:imgNodes.slice(0,6).map(n=>`"${n.name}"`)})}
+  else{
+    const list=Object.values(imgData);
+    const details=list.map(i=>`${i.status==="pass"?"✅":i.status==="fail"?"❌":"⚠️"} "${i.name}"${i.w?` · ${i.w}×${i.h}px`:""} — ${i.label}${i.meta?` [${i.meta}]`:""}${i.url?` · ${i.url.slice(0,55)}`:""}`);
+    const fails=list.filter(i=>i.status==="fail"),warns=list.filter(i=>i.status==="warn"),pass=list.filter(i=>i.status==="pass");
+    if(!fails.length&&!warns.length){res.push({id:10,label:"Photos Are Stock",status:"pass",finding:`All ${pass.length} image(s) verified as licensed stock.`,details})}
+    else{res.push({id:10,label:"Photos Are Stock",status:fails.length?"fail":"warn",finding:`${pass.length} verified, ${fails.length} failed, ${warns.length} unconfirmed.`,action:"Replace unlicensed images. Add source URLs to layer names.",details})}
+  }
+
+  // 11. Line height
+  next("Line height");
+  const styled=all.filter(n=>n.type==="TEXT"&&n.style?.fontSize);
+  const cramped=styled.filter(n=>{const{lineHeightPx:lh,lineHeightPercentFontSize:lhp,fontSize:fs}=n.style;if(lh)return lh/fs<1.3;if(lhp)return lhp/100<1.3;return false});
+  if(!styled.length){res.push({id:11,label:"Line Height",status:"warn",finding:"No text style data.",action:"Set line-height ≥1.4× font size."})}
+  else if(!cramped.length){res.push({id:11,label:"Line Height",status:"pass",finding:`All ${styled.length} text nodes have adequate line height.`})}
+  else{res.push({id:11,label:"Line Height",status:"fail",finding:`${cramped.length} node(s) with tight line height.`,action:"Use 1.4–1.6× font size for body text.",details:cramped.map(n=>`"${n.name}" — ${n.style.fontSize}px / ${Math.round(n.style.lineHeightPx||0)}px`)})}
+
+  // 12. No underline on headings
+  next("Heading style");
+  const headings=all.filter(n=>n.type==="TEXT"&&((n.style?.fontSize||0)>=20||(n.style?.fontWeight||0)>=600));
+  const underlined=headings.filter(n=>n.style?.textDecoration==="UNDERLINE");
+  if(!underlined.length){res.push({id:12,label:"No Underline on Headings",status:"pass",finding:`${headings.length} heading(s) checked — none underlined.`})}
+  else{res.push({id:12,label:"No Underline on Headings",status:"fail",finding:`${underlined.length} heading(s) use underline.`,action:"Remove underline. Use weight, size, or color for emphasis.",details:underlined.map(n=>`"${n.name}": "${(n.characters||"").slice(0,40)}"`) })}
+
+  // 13. Hover states
+  next("Hover states");
+  const hovers=all.filter(n=>/\bhover(ed)?\b|state=hover/i.test(n.name||""));
+  const ctas=all.filter(n=>/\b(button|btn|cta|link|nav|action)\b/i.test(n.name||"")&&["COMPONENT","COMPONENT_SET","INSTANCE"].includes(n.type));
+  if(hovers.length){res.push({id:13,label:"Hover States",status:"pass",finding:`${hovers.length} hover variant(s) found.`})}
+  else if(ctas.length){res.push({id:13,label:"Hover States",status:"warn",finding:`${ctas.length} CTA(s) found but no hover variants in scope.`,action:"Add Hover variants to each button component.",details:ctas.slice(0,5).map(n=>`"${n.name}"`)})}
+  else{res.push({id:13,label:"Hover States",status:"warn",finding:"No CTAs found in scope. Verify hover states manually.",action:"Create Hover variants for all interactive elements."})}
+
+  return res
+}
+
+// ── Render results ────────────────────────────────────────────────────────────
+function renderResults(results,meta){
+  const counts=results.reduce((a,r)=>{a[r.status]=(a[r.status]||0)+1;return a},{});
+  $("passCount").textContent=counts.pass||0;$("failCount").textContent=counts.fail||0;$("warnCount").textContent=counts.warn||0;
+  const ctx=artCtx(meta.name||"");
+  $("metaBar").innerHTML=`<span><strong style="color:var(--accent2)">${esc(meta.projectName)}</strong></span><span>Artboard: <strong>${esc(meta.name)}</strong></span>${ctx.label?`<span class="tag">${esc(ctx.label)}</span>`:""}<span>Width: <strong>${Math.round(meta.width)}px</strong></span><span>Date: <strong>${new Date().toLocaleDateString()}</strong></span>`;
+  const container=$("results");container.innerHTML="";
+  results.forEach((r,i)=>{
+    const card=document.createElement("div");card.className="rule-card";card.style.animationDelay=(i*35)+"ms";
+    const details=r.details?.length?`<div class="detail-list">${r.details.map(d=>`<div class="${r.status==="fail"?"d-fail":"d-warn"}">${esc(d)}</div>`).join("")}</div>`:"";
+    const action=r.action?`<div class="action-box ${r.status}"><strong>${r.status==="fail"?"🔧 Fix required":"👁 Manual check"}</strong>${esc(r.action)}${r.link?`<br><a class="ext-link" href="${r.link}" target="_blank">↗ Check tool</a>`:""}</div>`:"";
+    card.innerHTML=`<button class="rule-header" onclick="toggle(${r.id})"><span class="rule-num">${String(r.id).padStart(2,"0")}</span><div class="dot ${r.status}"></div><span class="rule-name">${esc(r.label)}</span><span class="pill ${r.status}">${r.status}</span><span class="chev" id="chev-${r.id}">▾</span></button><div class="rule-body ${r.status==="fail"?"open":""}" id="body-${r.id}"><div class="finding">${esc(r.finding)}</div>${details}${action}</div>`;
+    container.appendChild(card);
+  });
+  const fails=results.filter(r=>r.status==="fail");
+  if(fails.length){on("priority");$("priorityList").innerHTML=fails.slice(0,3).map((r,i)=>`<div class="priority-item"><div class="pnum">${i+1}</div><div class="ptext"><strong>Rule ${r.id} — ${r.label}</strong><br>${esc(r.action||"")}</div></div>`).join("")}
+  else off("priority");
+  on("summary");
+  on("rerunBtn");
+}
+
+function toggle(id){$(`body-${id}`).classList.toggle("open");$(`chev-${id}`).classList.toggle("open")}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded",()=>{
+  $("projectName").placeholder=`e.g. ${NAMES[Math.floor(Math.random()*NAMES.length)]}`;
+  // Restore saved token
+  const saved=localStorage.getItem("figma_token");
+  if(saved){$("token").value=saved;$("tokenSaved").style.display="inline"}
+  const p=new URLSearchParams(location.search);
+  if(p.get("link")){$("figmaLink").value=p.get("link");onLink(p.get("link"))}
+});
+</script>
+</body>
+</html>
