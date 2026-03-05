@@ -512,13 +512,26 @@ async function checkImages(doc,fileKey,token){
   for(const n of nodes){
     const layer=n.name||"",urlMatch=layer.match(/https?:\/\/[^\s"']+/),url=urlMatch?.[0]||urls[n.id]||null;
     let status="manual",label="Unknown",meta=null;
-    if(url){try{
-      const r=await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`,{method:"HEAD"});
-      const domain=new URL(url).hostname.replace(/^www\./,"");
-      const isStock=STOCK.some(d=>domain.includes(d));
-      if(isStock){status=r.ok?"pass":"warn";label=domain;if(domain.includes("unsplash"))meta="Unsplash";else if(domain.includes("pexels"))meta="Pexels";else if(domain.includes("istock")||domain.includes("istockphoto"))meta="iStock";else if(domain.includes("shutterstock"))meta="Shutterstock";else if(domain.includes("freepik"))meta="Freepik";else if(domain.includes("envato"))meta="Envato Elements";else if(domain.includes("adobe"))meta="Adobe Stock"}
-      else{status=r.ok?"warn":"fail";label=r.ok?`External: ${domain}`:"URL not reachable"}
-    }catch{label="Could not verify"}}
+    if(url){
+      try{
+        const domain=new URL(url).hostname.replace(/^www\./,"");
+        const isStock=STOCK.some(d=>domain.includes(d));
+        if(isStock){
+          if(domain.includes("unsplash"))meta="Unsplash";
+          else if(domain.includes("pexels"))meta="Pexels";
+          else if(domain.includes("istock")||domain.includes("istockphoto"))meta="iStock";
+          else if(domain.includes("shutterstock"))meta="Shutterstock";
+          else if(domain.includes("freepik"))meta="Freepik";
+          else if(domain.includes("envato"))meta="Envato Elements";
+          else if(domain.includes("adobe"))meta="Adobe Stock";
+          status="pass";label=meta||domain;
+        } else {status="warn";label=`External: ${domain}`;}
+      }catch{label="Could not verify";}
+    } else {
+      // No URL — check if layer name hints at a stock source
+      const ln=layer.toLowerCase();
+      if(STOCK.some(d=>ln.includes(d.split(".")[0]))){status="pass";label="Named as stock";}
+    }
     out[n.id]={name:layer,url,status,label,meta,w:Math.round(n.absoluteBoundingBox?.width||0),h:Math.round(n.absoluteBoundingBox?.height||0)};
   }
   return out
@@ -531,14 +544,46 @@ function audit(doc,imgData){
 
   // 1. AA Contrast
   next("AA Contrast");
-  function bgCandidates(node){const out=[];let cur=node.parent;while(cur){(cur.fills||[]).filter(f=>f.visible!==false).forEach(f=>{if(f.type==="SOLID")out.push(fillRGB(f));else if(/GRADIENT/.test(f.type))(f.gradientStops||[]).forEach(s=>out.push([Math.round(s.color.r*255),Math.round(s.color.g*255),Math.round(s.color.b*255)]))});cur=cur.parent}return out.filter(Boolean)}
+  // Determine artboard background — use the first solid fill on the doc node itself,
+  // otherwise sample the most-common fill colour across top-level children,
+  // otherwise fall back to black (safe for dark designs).
+  function artboardBg(){
+    const docSolid=(doc.fills||[]).find(f=>f.type==="SOLID"&&f.visible!==false);
+    if(docSolid)return fillRGB(docSolid);
+    // sample top-level section backgrounds
+    const counts={};
+    (doc.children||[]).forEach(n=>(n.fills||[]).filter(f=>f.type==="SOLID"&&f.visible!==false).forEach(f=>{const h=fillHex(f);if(h)counts[h]=(counts[h]||0)+1}));
+    const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    if(sorted.length){const h=sorted[0][0];const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return[r,g,b];}
+    // No fills found at all — guess from text color: if most text is white, bg is dark; if dark, bg is light
+    const textNodes=all.filter(n=>n.type==="TEXT");
+    const lightText=textNodes.filter(n=>{const f=(n.fills||[]).find(f=>f.type==="SOLID"&&f.visible!==false);if(!f)return false;const rgb=fillRGB(f);return rgb&&lum(...rgb)>0.3}).length;
+    const darkText=textNodes.filter(n=>{const f=(n.fills||[]).find(f=>f.type==="SOLID"&&f.visible!==false);if(!f)return false;const rgb=fillRGB(f);return rgb&&lum(...rgb)<=0.3}).length;
+    return lightText>darkText?[0,0,0]:[255,255,255];
+  }
+
+  // For each text node, find the nearest solid background by walking its
+  // direct Figma parent chain via a WeakMap built during traversal.
+  const _pm=new Map();
+  (function buildPM(n,p){_pm.set(n.id,p);(n.children||[]).forEach(c=>buildPM(c,n))})(doc,null);
+  function nearestBg(node){
+    let cur=_pm.get(node.id);
+    while(cur){
+      const solid=(cur.fills||[]).find(f=>f.type==="SOLID"&&f.visible!==false&&f.opacity!==0);
+      if(solid)return[fillRGB(solid)];
+      const grad=(cur.fills||[]).find(f=>/GRADIENT/.test(f.type)&&f.visible!==false);
+      if(grad)return(grad.gradientStops||[]).map(s=>[Math.round(s.color.r*255),Math.round(s.color.g*255),Math.round(s.color.b*255)]);
+      cur=_pm.get(cur.id);
+    }
+    return[artboardBg()];
+  }
   const texts=all.filter(n=>n.type==="TEXT"&&n.fills?.length),fails1=[],imgBg=[];
   texts.forEach(n=>{
     const solidFg=(n.fills||[]).filter(f=>f.visible!==false).find(f=>f.type==="SOLID"),fg=solidFg?fillRGB(solidFg):null;if(!fg)return;
     const fs=n.style?.fontSize||16,bold=(n.style?.fontWeight||400)>=700,thresh=(fs>=18||(fs>=14&&bold))?3.0:4.5;
     let cur2=n.parent,hasImg=false;while(cur2){if((cur2.fills||[]).some(f=>f.type==="IMAGE"&&f.visible!==false)){hasImg=true;break}cur2=cur2.parent}
     if(hasImg){imgBg.push({name:n.name,fg:fillHex(solidFg)});return}
-    const bgs=bgCandidates(n);if(!bgs.length)bgs.push([255,255,255]);
+    const bgs=nearestBg(n);
     let worst=Infinity,worstHex="#ffffff";
     bgs.forEach(bg=>{const r=contrast(fg,bg);if(r<worst){worst=r;worstHex="#"+bg.map(v=>v.toString(16).padStart(2,"0")).join("")}});
     if(worst<thresh)fails1.push({name:n.name,ratio:worst.toFixed(2),thresh,fg:fillHex(solidFg),bg:worstHex,samples:bgs.length});
